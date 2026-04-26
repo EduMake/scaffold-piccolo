@@ -14,6 +14,14 @@ Both commands share the same code; style is controlled by `--style plain|htmx`.
 
 ## Install
 
+Until published to PyPI, install directly from GitHub:
+
+```bash
+pip install git+https://github.com/EduMake/scaffold-piccolo-htmx.git
+```
+
+Once available on PyPI:
+
 ```bash
 pip install piccolo-scaffold
 ```
