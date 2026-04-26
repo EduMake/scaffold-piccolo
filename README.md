@@ -37,8 +37,9 @@ piccolo-scaffold
 # HTMX variant
 piccolo-scaffold-htmx
 
-# Explicit flag — same result
-piccolo-scaffold --style htmx
+# Or via python -m (note: underscores, not hyphens)
+python -m piccolo_scaffold
+python -m piccolo_scaffold --style htmx
 ```
 
 Generated files:
