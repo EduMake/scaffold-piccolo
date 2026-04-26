@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "piccolo-scaffold"
+version = "0.1.0"
+description = "Scaffold server-rendered FastAPI routes and Jinja2/HTMX templates from Piccolo table definitions"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "piccolo>=1.0",
+]
+
+[project.scripts]
+# plain Jinja2 (Post/Redirect/Get, no JS)
+piccolo-scaffold       = "piccolo_scaffold.scaffold:main"
+# HTMX partial-swap variant (alias that pre-sets --style htmx)
+piccolo-scaffold-htmx  = "piccolo_scaffold.scaffold:main_htmx"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["piccolo_scaffold*"]
