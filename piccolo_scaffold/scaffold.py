@@ -16,7 +16,7 @@ Styles
 
   htmx
     Same routes but mutations return HTML fragments that HTMX swaps in-place.
-    Requires htmx.min.js (served from /static/).
+        Generated page.html loads HTMX from a CDN by default.
     Feels more "modern app" without a full JavaScript framework.
 
 Both styles share the same Piccolo introspection logic and produce the same
@@ -323,7 +323,7 @@ def gen_page_html(tables: list[type[Table]]) -> str:
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <title>App</title>
-          <script src="/static/htmx.min.js"></script>
+                    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
           <style>
             body {{ font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }}
             table {{ width: 100%; border-collapse: collapse; margin-top: 1rem; }}
@@ -880,10 +880,18 @@ def main():
     print(f"  1. Review {routes_path} and adjust ownership/filtering as needed.")
     print(f"  2. In app.py add:")
     print(f"       from {routes_path.stem} import router as {tdir}_router")
-    print(f"       app.include_router({tdir}_router)")
+    print(f"       app.include_router({tdir}_router, include_in_schema=False)")
     print(f"     (skip if already done)")
-    print(f"  3. Run: python -m uvicorn app:app --reload")
-    print(f"  4. Visit: http://localhost:8000{prefix}/")
+    print("  3. Ensure the generated routes can import your auth helpers:")
+    print("       from auth_helpers import clear_session_cookie, get_authenticated_user, set_session_cookie")
+    if is_plain:
+        print(f"  4. Run: python -m uvicorn app:app --reload")
+        print(f"  5. Visit: http://localhost:8000{prefix}/")
+    else:
+        print(f"  4. HTMX page.html loads https://unpkg.com/htmx.org@2.0.4 by default.")
+        print("     If you prefer a local copy, mount /static in app.py and update the script src.")
+        print(f"  5. Run: python -m uvicorn app:app --reload")
+        print(f"  6. Visit: http://localhost:8000{prefix}/")
 
 
 if __name__ == "__main__":

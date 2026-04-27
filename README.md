@@ -69,8 +69,23 @@ Re-running will **not** overwrite existing files unless you pass `--force`.
 
 ```python
 from app_routes import router as app_router
-app.include_router(app_router)
+app.include_router(app_router, include_in_schema=False)
 ```
+
+For the HTMX variant:
+
+```python
+from htmx_routes import router as htmx_router
+app.include_router(htmx_router, include_in_schema=False)
+```
+
+The generated routes also expect these helpers to exist in your project:
+
+```python
+from auth_helpers import clear_session_cookie, get_authenticated_user, set_session_cookie
+```
+
+HTMX templates load `https://unpkg.com/htmx.org@2.0.4` by default, so the scaffold does not require a bundled `static/htmx.min.js`. If you want to self-host HTMX instead, mount `/static` in your app and change the script tag in `templates/htmx/page.html`.
 
 ## Development
 
