@@ -223,11 +223,12 @@ def _inject_frontend_link(prefix: str) -> Path | None:
             2) templates/index.html
             3) index.html
     """
-        candidates = [
-                Path("templates/home.html"),
-                Path("templates/index.html"),
-                Path("index.html"),
-        ]
+    
+    candidates = [
+            Path("templates/home.html"),
+            Path("templates/index.html"),
+            Path("index.html"),
+    ]
     target = next((p for p in candidates if p.exists() and p.is_file()), None)
     if target is None:
         return None
