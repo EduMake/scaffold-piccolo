@@ -7,10 +7,11 @@ Supports two styles:
 
 | Style | Command | Description |
 |-------|---------|-------------|
-| Plain Jinja2 | `piccolo-scaffold` | Post/Redirect/Get — no JavaScript required |
-| HTMX | `piccolo-scaffold-htmx` | Partial HTML swaps via [htmx](https://htmx.org/) |
+| Plain Jinja2 | `python -m piccolo_scaffold` | Post/Redirect/Get — no JavaScript required |
+| HTMX | `python -m piccolo_scaffold --style htmx` | Partial HTML swaps via [htmx](https://htmx.org/) |
 
-Both commands share the same code; style is controlled by `--style plain|htmx`.
+Script aliases are also available (`piccolo-scaffold`, `piccolo-scaffold-htmx`), but
+module execution is the recommended default.
 
 ## Install
 
@@ -32,17 +33,17 @@ Run from your Piccolo project root (where `tables.py` lives):
 
 ```bash
 # Plain Jinja2 (default)
-piccolo-scaffold
+python -m piccolo_scaffold
 
 # HTMX variant
-piccolo-scaffold-htmx
-
-# Or via python -m (note: underscores, not hyphens)
-python -m piccolo_scaffold
 python -m piccolo_scaffold --style htmx
 
 # If your app stores tables in a package (for example src/my_app/tables.py):
-piccolo-scaffold --tables-mod my_app.tables
+python -m piccolo_scaffold --tables-mod my_app.tables
+
+# Script aliases (optional)
+piccolo-scaffold
+piccolo-scaffold-htmx
 ```
 
 Generated files:
@@ -56,6 +57,9 @@ Generated files:
 | `templates/app/_<table>_table.html` | Per-table row listing |
 
 Re-running will **not** overwrite existing files unless you pass `--force`.
+
+If `templates/index.html` (or `index.html`) already exists, scaffold also adds a
+link to the generated frontend route (for example `/app/` or `/htmx/`).
 
 ## Options
 
@@ -71,6 +75,8 @@ Re-running will **not** overwrite existing files unless you pass `--force`.
 ## Wire up in app.py
 
 ```python
+app = FastAPI(title="Piccolo Todo API", lifespan=lifespan)
+
 from app_routes import router as app_router
 app.include_router(app_router, include_in_schema=False)
 ```
@@ -78,6 +84,8 @@ app.include_router(app_router, include_in_schema=False)
 For the HTMX variant:
 
 ```python
+app = FastAPI(title="Piccolo Todo API", lifespan=lifespan)
+
 from htmx_routes import router as htmx_router
 app.include_router(htmx_router, include_in_schema=False)
 ```
@@ -96,7 +104,7 @@ HTMX templates load `https://unpkg.com/htmx.org@2.0.4` by default, so the scaffo
 git clone https://github.com/EduMake/scaffold-piccolo-htmx
 cd scaffold-piccolo-htmx
 pip install -e .
-piccolo-scaffold --help
+python -m piccolo_scaffold --help
 ```
 
 ## License

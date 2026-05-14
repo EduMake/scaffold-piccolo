@@ -215,6 +215,43 @@ def _import_tables_module(module_name: str):
         ) from exc
 
 
+def _inject_frontend_link(prefix: str) -> Path | None:
+    """Add a link to the generated frontend in an existing index.html.
+
+    Preference order:
+      1) templates/index.html
+      2) index.html
+    """
+    candidates = [Path("templates/index.html"), Path("index.html")]
+    target = next((p for p in candidates if p.exists() and p.is_file()), None)
+    if target is None:
+        return None
+
+    href = f"{prefix.rstrip('/')}/"
+    text = target.read_text(encoding="utf-8")
+
+    # Avoid duplicate insertion if the link already exists.
+    if f'href="{href}"' in text:
+        return target
+
+    link_block = (
+        "\n"
+        "  <!-- Added by piccolo-scaffold -->\n"
+        f"  <p><a href=\"{href}\">Open Frontend</a></p>\n"
+    )
+
+    lower = text.lower()
+    body_close = lower.rfind("</body>")
+    if body_close != -1:
+        new_text = text[:body_close] + link_block + text[body_close:]
+    else:
+        sep = "" if text.endswith("\n") or not text else "\n"
+        new_text = text + sep + link_block
+
+    target.write_text(new_text, encoding="utf-8")
+    return target
+
+
 # ---------------------------------------------------------------------------
 # Code generators
 # ---------------------------------------------------------------------------
@@ -977,10 +1014,14 @@ def main():
         for t in owned_tables:
             write(out_dir / f"_{t.__name__.lower()}_table.html", gen_table_html(t))
 
+    linked_index = _inject_frontend_link(prefix)
+    if linked_index:
+        print(f"  UPDATE {linked_index}  (added frontend link)")
+
     print()
     print("Done! Next steps:")
     print(f"  1. Review {routes_path} and adjust ownership/filtering as needed.")
-    print(f"  2. In app.py add:")
+    print(f"  2. In app.py, after defining app = FastAPI(...), add:")
     print(f"       from {routes_path.stem} import router as {tdir}_router")
     print(f"       app.include_router({tdir}_router, include_in_schema=False)")
     print(f"     (skip if already done)")
