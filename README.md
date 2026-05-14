@@ -40,6 +40,9 @@ piccolo-scaffold-htmx
 # Or via python -m (note: underscores, not hyphens)
 python -m piccolo_scaffold
 python -m piccolo_scaffold --style htmx
+
+# If your app stores tables in a package (for example src/my_app/tables.py):
+piccolo-scaffold --tables-mod my_app.tables
 ```
 
 Generated files:

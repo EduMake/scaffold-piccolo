@@ -115,6 +115,106 @@ def is_user_data(t: type[Table], all_tables: dict[str, type[Table]], visited: se
     return False
 
 
+def _add_common_source_roots() -> None:
+    """Ensure common project roots are importable for --tables-mod lookup."""
+    cwd = Path.cwd()
+    roots = [cwd, cwd / "src"]
+    for root in roots:
+        if root.exists():
+            root_str = str(root)
+            if root_str not in sys.path:
+                sys.path.insert(0, root_str)
+
+
+def _path_to_module(path: Path, root: Path) -> str:
+    """Convert a Python file path under root to a dotted module path."""
+    relative = path.relative_to(root).with_suffix("")
+    return ".".join(relative.parts)
+
+
+def _iter_tables_candidates(cwd: Path) -> list[tuple[Path, str]]:
+    """Find likely tables modules in cwd and cwd/src.
+
+    Returns tuples of (root_used_for_import, dotted_module_name).
+    """
+    ignore_dirs = {
+        ".git",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        "node_modules",
+    }
+    candidates: list[tuple[Path, str]] = []
+
+    for root in [cwd, cwd / "src"]:
+        if not root.exists():
+            continue
+        for file_path in root.rglob("tables.py"):
+            if any(part in ignore_dirs for part in file_path.parts):
+                continue
+            candidates.append((root, _path_to_module(file_path, root)))
+
+    # Keep stable order while de-duplicating by module name.
+    seen: set[str] = set()
+    unique: list[tuple[Path, str]] = []
+    for root, mod_name in sorted(candidates, key=lambda item: item[1]):
+        if mod_name in seen:
+            continue
+        seen.add(mod_name)
+        unique.append((root, mod_name))
+    return unique
+
+
+def _import_tables_module(module_name: str):
+    """Import module_name with helpful fallback behavior for common layouts."""
+    _add_common_source_roots()
+
+    try:
+        return importlib.import_module(module_name)
+    except ModuleNotFoundError as exc:
+        # If a nested import inside the target module failed, re-raise original.
+        if exc.name != module_name:
+            raise
+
+        # Only auto-discover when default module name is used.
+        if module_name != "tables":
+            raise
+
+        cwd = Path.cwd()
+        candidates = _iter_tables_candidates(cwd)
+
+        imported: list[tuple[str, object]] = []
+        for root, candidate_module in candidates:
+            root_str = str(root)
+            if root_str not in sys.path:
+                sys.path.insert(0, root_str)
+            try:
+                imported.append((candidate_module, importlib.import_module(candidate_module)))
+            except Exception:
+                continue
+
+        if len(imported) == 1:
+            return imported[0][1]
+
+        if len(imported) > 1:
+            options = ", ".join(name for name, _ in imported)
+            raise RuntimeError(
+                "Could not choose a tables module automatically. "
+                f"Found multiple importable candidates: {options}. "
+                "Please specify one explicitly with --tables-mod."
+            ) from exc
+
+        discovered = ", ".join(name for _, name in candidates) if candidates else "none"
+        raise RuntimeError(
+            "Could not import module 'tables'. "
+            "Use --tables-mod to point to your table module "
+            "(for example: --tables-mod my_app.tables). "
+            f"Discovered candidate tables modules: {discovered}."
+        ) from exc
+
+
 # ---------------------------------------------------------------------------
 # Code generators
 # ---------------------------------------------------------------------------
@@ -827,10 +927,12 @@ def main():
     routes_path = Path(args.out_routes or (f"{tdir}_routes.py"))
     out_dir = Path(args.out_templates or f"templates/{tdir}")
 
-    # Add project root to sys.path so we can import the tables module.
-    sys.path.insert(0, str(Path(__file__).parent.parent))
+    try:
+        mod = _import_tables_module(args.tables_mod)
+    except Exception as exc:
+        print(f"Error importing tables module '{args.tables_mod}': {exc}")
+        sys.exit(1)
 
-    mod = importlib.import_module(args.tables_mod)
     tables = discover_tables(mod)
 
     if not tables:
