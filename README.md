@@ -58,8 +58,9 @@ Generated files:
 
 Re-running will **not** overwrite existing files unless you pass `--force`.
 
-If `templates/index.html` (or `index.html`) already exists, scaffold also adds a
-link to the generated frontend route (for example `/app/` or `/htmx/`).
+If `templates/home.html` (or `templates/index.html` / `index.html`) already
+exists, scaffold also adds a link to the generated frontend route (for example
+`/app/` or `/htmx/`).
 
 ## Options
 
